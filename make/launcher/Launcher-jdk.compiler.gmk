@@ -28,7 +28,9 @@ include LauncherCommon.gmk
 $(eval $(call SetupBuildLauncher, javac, \
    MAIN_CLASS := com.sun.tools.javac.Main, \
    JAVA_ARGS := --add-modules ALL-DEFAULT, \
-   CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+   CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS,-Wl,-Ttext-segment=0x60000, \
+   $1_LDFLAGS := -Wl,-Ttext-segment=0x60000, \
+   JAVA_LDFLAGS := -Wl,-Ttext-segment=0x60000, \
 ))
 
 $(eval $(call SetupBuildLauncher, serialver, \
@@ -41,7 +43,9 @@ ifeq ($(ENABLE_SJAVAC), yes)
   # into any real images
   $(eval $(call SetupBuildLauncher, sjavac, \
       MAIN_CLASS := com.sun.tools.sjavac.Main, \
-      CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+      CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS,-Wl,-Ttext-segment=0x60000, \
       OUTPUT_DIR := $(JDK_OUTPUTDIR)/bin, \
+      $1_LDFLAGS := -Wl,-Ttext-segment=0x60000, \
+      JAVA_LDFLAGS := -Wl,-Ttext-segment=0x60000, \
   ))
 endif
