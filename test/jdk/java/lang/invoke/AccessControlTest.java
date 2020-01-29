@@ -250,12 +250,17 @@ public class AccessControlTest {
                 int prev = m2;
                 m2 |= PACKAGE;  // it acts like a package method also
                 if ((lookupModes() & PROTECTED) != 0 &&
-                    c2.isAssignableFrom(c1))
-                    m2 |= PUBLIC;  // from a subclass, it acts like a public method also
+                    c2.isAssignableFrom(c1)) {
+                        m2 |= PUBLIC;  // from a subclass, it acts like a public method also
+                        
+                        //EXECUTES ALL THE WAY TO HERE
+                    }
             }
             if (verbosity >= 2)
                 System.out.format("%s willAccess %s m1=0x%h m2=0x%h => %s%n", this, lc, m1, m2, ((m2 & m1) != 0));
-            return (m2 & m1) != 0;
+
+            System.out.println("m1 = " + m1 + " m2 = " + m2 + "\nReturn value of willAccess = " + ((m2 & m1) != 0)); //false
+            return (m2 & m1) != 0; //17 & 12 = 0, returns false
         }
 
         /** Predict the success or failure of accessing this class. */
@@ -385,6 +390,7 @@ public class AccessControlTest {
         makeCases(lookups());
         if (verbosity > 0) {
             verbosity += 9;
+            System.out.println("Verbosity is now " + verbosity);
             Method pro_in_self = targetMethod(THIS_CLASS, PROTECTED, methodType(void.class));
             testOneAccess(lookupCase("AccessControlTest/public"),  pro_in_self, "find");
             testOneAccess(lookupCase("Remote_subclass/public"),    pro_in_self, "find");
@@ -404,8 +410,8 @@ public class AccessControlTest {
                 for (LookupCase sourceCase : CASES) {
                     testOneAccess(sourceCase, method, "findClass");
                     testOneAccess(sourceCase, method, "accessClass");
-                    testOneAccess(sourceCase, method, "find");
-                    testOneAccess(sourceCase, method, "unreflect");
+                    testOneAccess(sourceCase, method, "find"); //Fails
+                    testOneAccess(sourceCase, method, "unreflect"); //Fails
                 }
             }
         }
@@ -418,7 +424,7 @@ public class AccessControlTest {
         Class<?> targetClass = method.getDeclaringClass();
         String methodName = method.getName();
         MethodType methodType = methodType(method.getReturnType(), method.getParameterTypes());
-        boolean isFindOrAccessClass = "findClass".equals(kind) || "accessClass".equals(kind);
+        boolean isFindOrAccessClass = "findClass".equals(kind) || "accessClass".equals(kind); //always false
         boolean willAccess = isFindOrAccessClass ?
                 sourceCase.willAccessClass(targetClass, "findClass".equals(kind)) : sourceCase.willAccess(method);
         boolean didAccess = false;
@@ -433,7 +439,7 @@ public class AccessControlTest {
                 break;
             case "find":
                 if ((method.getModifiers() & Modifier.STATIC) != 0)
-                    sourceCase.lookup().findStatic(targetClass, methodName, methodType);
+                    sourceCase.lookup().findStatic(targetClass, methodName, methodType); //Down this route
                 else
                     sourceCase.lookup().findVirtual(targetClass, methodName, methodType);
                 break;
@@ -448,8 +454,17 @@ public class AccessControlTest {
             accessError = ex;
         }
         if (willAccess != didAccess) {
-            System.out.println(sourceCase+" => "+targetClass.getSimpleName()+(isFindOrAccessClass?"":"."+methodName+methodType));
+            System.out.println(sourceCase+" => "+targetClass.getSimpleName()+(isFindOrAccessClass?"":"."+methodName+methodType)); 
+            //AccessControlTest/module => AccessControlTest.pro_in_self()void
+            //isFindOrAccessClass = false
+
             System.out.println("fail "+(isFindOrAccessClass?kind:"on "+method)+" ex="+accessError);
+            //fail on protected static void test.java.lang.invoke.AccessControlTest.pro_in_self() ex=null
+
+            System.out.println("willAccess: " + willAccess + "\ndidAccess: " + didAccess);
+            //willAccess: false
+            //didAccess: true (always going to be true)
+
             assertEquals(willAccess, didAccess);
         }
         testCount++;
@@ -493,7 +508,7 @@ public class AccessControlTest {
     }
     // MODULE not a test case at this time
     private static final int[] ACCESS_CASES = {
-        PUBLIC, PACKAGE, PRIVATE, PROTECTED
+        PUBLIC, PACKAGE, PRIVATE, PROTECTED 
     };
     /** Return one of the ACCESS_CASES. */
     static int fixMods(int mods) {
